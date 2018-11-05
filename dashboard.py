@@ -105,44 +105,49 @@ app.layout = html.Div(className='container-fluid', children=[
     html.Div(className='row', children=[
         html.Div(className='col-md-2', style={"height": "100vh", "background" : "#1d283a"}, children=[
             html.Div(className="collapse show", id="navbarToggleExternalContent", style={'height' : '100vh','width':'80%'}, children=[
-                html.H4('Dashboard', className="text-white", style={'color':'white'}),
+                html.H3('Dashboard', className="text-white", style={'color':'white'}),
                 html.Div([
-                    dcc.Input(id='date-input', value='1800', type='text'),
-                    dcc.Slider(
-                        id='year-slider',
-                        min=1000,
-                        max=2020,
-                        value=1800,
-                        marks={str(year): str(year) for year in df['year'].unique()}
-                    ),
+                    html.P('Maps', style={'color' : 'white', 'font-size' : '16px', 'margin-top' : '20px', 'margin-bottom' : 0}),
                     dcc.Dropdown(
                         id = "map-drop",
                         options = [{"label": "All impacts map", "value": "validMap"}, {"label": "Heatmap", "value": "heatMap"}, {"label": "Clustered map", "value": "clusteredMap"}, {"label": "Found and seen falling map", "value": "foundSeenFallingMap"}, {"label": "Class map", "value": "classMap"}],
                         value = 'heatMap',
                         placeholder = "Select Map"
                     ),
+                    html.P('Left-sided plot', style={'color' : 'white', 'font-size' : '16px', 'margin-top' : '25px', 'margin-bottom' : 0}),
                     dcc.Dropdown(
                         id = "left-plot-drop",
                         options = [{"label": "Discoveries over time", "value": "discoveriesHist"}, {"label": "Meteorites mass distribution", "value": "massHist"}, {"label": "Mean mass per type", "value": "meanMassPerFall"}, {"label": "Meteorites classes", "value": "classesHist"}, {"label": "Mass per year per class", "value": "meanMassPerYearClass"}],
                         value = 'discoveriesHist',
                         placeholder = "Select left graph"
                     ),
+                    html.P('Right-sided plot', style={'color' : 'white', 'font-size' : '16px', 'margin-top' : '25px', 'margin-bottom' : 0}),
                     dcc.Dropdown(
                         id = "right-plot-drop",
                         options = [{"label": "Found over time", "value": "foundHist"}, {"label": "Seen falling over time", "value": "seenFallingHist"}, {"label": "Mass per type", "value": "massViolin"}, {"label": "Mean mass per class", "value": "meanMassPerClass"}],
                         value = 'foundHist',
                         placeholder = "Select right graph"
-                    )
+                    ),
+                    html.P("Année minimale", style={'color' : 'white', 'font-size' : '16px', 'margin-top' : '25px', 'margin-bottom' : 0}),
+                    dcc.Input(id='date-input', value='1800', type='text'),
+                    html.P('Année', style={'color' : 'white', 'font-size' : '16px', 'margin-top' : '25px', 'margin-bottom' : 0}),
+                    dcc.Slider(
+                        id='year-slider',
+                        min=1000,
+                        max=2010,
+                        value=1800,
+                        marks={str(year): str(year) for year in df['year'].unique()}
+                    ),
                 ])
             ])
         ]),
-        html.Div(className='col-md-8 col-md-offset-1', style={"height": "100vh"}, children=[
-            html.Div(id = "mapBox", className='row', style={"height": "50%"} , children=[
+        html.Div(className='col-md-10', style={"height": "100vh"}, children=[
+            html.Div(id = "mapBox", className='row', style={"height": "50%", 'width':'80%', 'margin' : 'auto'} , children=[
                 html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/heatmap.html', 'r', encoding='utf8').read()),
             ]),
-            html.Div(className='row', style={"height": "50%"}, children=[
-                html.Div(className='col-md-5', style={"height": "50%"}, children=[
-                    dcc.Graph(
+            html.Div(className='col-md-12', style={"height": "50%"}, children=[
+                html.Div(className='col-md-6', style={"height": "50%"}, children=[
+                    dcc.Graph(style={'width': '75vh', 'height': '52vh'},
                         id="left-plot",
                         figure={
                             'data': [
@@ -159,8 +164,8 @@ app.layout = html.Div(className='container-fluid', children=[
                         }
                     )
                 ]),
-                html.Div(className='col-md-5', children=[
-                    dcc.Graph(
+                html.Div(className='col-md-6', style={"height": "50%"}, children=[
+                    dcc.Graph(style={'width': '75vh', 'height': '52vh'},
                         id="right-plot",
                         figure={
                             'data': [
@@ -195,7 +200,7 @@ def update_map(map_value):
         return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/clusteredMap.html', 'r', encoding='utf8').read())
     elif map_value == 'foundSeenFallingMap':
         return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/discoveryTypeMap.html', 'r', encoding='utf8').read())
-    else:
+    elif map_value == 'classMap':
         return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/discoveryClassMap.html', 'r', encoding='utf8').read())
 
 @app.callback(
@@ -267,7 +272,7 @@ def update_left_plot(left_plot_value):
                 yaxis={'title': 'Quantity of meteorites', 'rangemode' : 'tozero'}
             )
         }
-    else:
+    elif left_plot_value == 'meanMassPerYearClass':
         figure = fig
         return figure
 
@@ -332,7 +337,7 @@ def update_right_plot(right_plot_value):
                 yaxis={'title': 'Mass (in g)', 'type' : 'log'}
             )
         }
-    else:
+    elif right_plot_value == 'meanMassPerClass':
         return {
             'data': [
                 go.Bar(
