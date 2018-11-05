@@ -118,12 +118,20 @@ app.layout = html.Div(className='container-fluid', children=[
                     dcc.Dropdown(
                         id = "map-drop",
                         options = [{"label": "All impacts map", "value": "validMap"}, {"label": "Heatmap", "value": "heatMap"}, {"label": "Clustered map", "value": "clusteredMap"}, {"label": "Found and seen falling map", "value": "foundSeenFallingMap"}, {"label": "Class map", "value": "classMap"}],
+                        value = 'heatMap',
                         placeholder = "Select Map"
                     ),
                     dcc.Dropdown(
                         id = "left-plot-drop",
                         options = [{"label": "Discoveries over time", "value": "discoveriesHist"}, {"label": "Meteorites mass distribution", "value": "massHist"}, {"label": "Mean mass per type", "value": "meanMassPerFall"}, {"label": "Meteorites classes", "value": "classesHist"}, {"label": "Mass per year per class", "value": "meanMassPerYearClass"}],
-                        placeholder = "Select Left graph"
+                        value = 'discoveriesHist',
+                        placeholder = "Select left graph"
+                    ),
+                    dcc.Dropdown(
+                        id = "right-plot-drop",
+                        options = [{"label": "Found over time", "value": "foundHist"}, {"label": "Seen falling over time", "value": "seenFallingHist"}, {"label": "Mass per type", "value": "massViolin"}, {"label": "Mean mass per class", "value": "meanMassPerClass"}],
+                        value = 'foundHist',
+                        placeholder = "Select right graph"
                     )
                 ])
             ])
@@ -133,9 +141,9 @@ app.layout = html.Div(className='container-fluid', children=[
                 html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/heatmap.html', 'r', encoding='utf8').read()),
             ]),
             html.Div(className='row', style={"height": "50%"}, children=[
-                html.Div(id="left-plot", className='col-md-5', children=[
+                html.Div(className='col-md-5', style={"height": "50%"}, children=[
                     dcc.Graph(
-                        id='graph1',
+                        id="left-plot",
                         figure={
                             'data': [
                                 go.Histogram(
@@ -153,7 +161,7 @@ app.layout = html.Div(className='container-fluid', children=[
                 ]),
                 html.Div(className='col-md-5', children=[
                     dcc.Graph(
-                        id="graph2",
+                        id="right-plot",
                         figure={
                             'data': [
                                 go.Histogram(
@@ -167,14 +175,125 @@ app.layout = html.Div(className='container-fluid', children=[
                                 yaxis={'title': 'Quantity of discoveries', 'type' : 'log'}
                             )
                         }
-                    ),
-                ]),
+                    )
+                ])
             ])
         ])
-    ]),
-    dcc.Graph(
-        id="hist4",
-        figure={
+    ])
+])
+
+@app.callback(
+    Output(component_id='mapBox',component_property='children'),
+    [Input(component_id='map-drop', component_property='value')]
+)
+def update_map(map_value):
+    if map_value == 'validMap':
+        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/allImpactsOverTimeMap.html', 'r', encoding='utf8').read())
+    elif map_value == 'heatMap':
+        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/heatmap.html', 'r', encoding='utf8').read())
+    elif map_value == 'clusteredMap':
+        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/clusteredMap.html', 'r', encoding='utf8').read())
+    elif map_value == 'foundSeenFallingMap':
+        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/discoveryTypeMap.html', 'r', encoding='utf8').read())
+    else:
+        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/discoveryClassMap.html', 'r', encoding='utf8').read())
+
+@app.callback(
+    Output(component_id='left-plot',component_property='figure'),
+    [Input(component_id='left-plot-drop', component_property='value')]
+)
+
+def update_left_plot(left_plot_value):
+    if left_plot_value == 'discoveriesHist':
+        return {
+            'data': [
+                go.Histogram(
+                    x=df[df["year"] >= 1800]['year'],
+                    xbins=dict(start=np.min(df['year']), size=10, end=2020)
+                ) 
+            ],
+            'layout': go.Layout(
+                title = 'Meteorite discoveries distribution since 1800',
+                xaxis={'title': 'Time (year)'},
+                yaxis={'title': 'Quantity of discoveries', 'type' : 'log'},
+            )
+        }
+                   
+    elif left_plot_value == 'massHist':
+        return {
+            'data': [
+                go.Histogram(
+                    x=df['mass'],
+                    xbins=dict(start=np.min(df['mass']), size=100, end=10000)
+                ) 
+            ],
+            'layout': go.Layout(
+                title='Meteorite mass distribution',
+                xaxis={'title': 'Mass (in g)'},
+                yaxis={'title' : 'Quantity of meteorites', 'type' : 'log'}
+            )
+        }
+    elif left_plot_value == 'meanMassPerFall':
+        return {
+            'data': [
+                go.Bar(
+                    x=mean_mass_by_fall.fall,
+                    y=mean_mass_by_fall.mass,
+                    marker = {
+                        'color' : palette
+                    }
+                ) 
+            ],
+            'layout': go.Layout(
+                title='Mean mass in terms of type of discovery',
+                xaxis={'title': 'Type of discovery'},
+                yaxis={'title' : 'Mean mass (in g)', 'rangemode' : 'tozero'}
+            )
+        }
+    elif left_plot_value == 'classesHist':
+        return {
+            'data': [
+                go.Bar(
+                    x=main_class_occurences.index.tolist(),
+                    y=main_class_occurences.recclass,
+                    marker = {
+                        'color' : palette
+                    }
+                ) 
+            ],
+            'layout': go.Layout(
+                title='Six main meteorites class frequency',
+                xaxis={'title': 'Class of meteorite'},
+                yaxis={'title': 'Quantity of meteorites', 'rangemode' : 'tozero'}
+            )
+        }
+    else:
+        figure = fig
+        return figure
+
+@app.callback(
+    Output(component_id='right-plot',component_property='figure'),
+    [Input(component_id='right-plot-drop', component_property='value')]
+)
+
+def update_right_plot(right_plot_value):
+    if right_plot_value == 'foundHist':
+        return {
+            'data': [
+                go.Histogram(
+                    x=found_meteorites[found_meteorites["year"] >= 1800]['year'],
+                    xbins=dict(start=np.min(df['year']), size=10, end=2020)
+                ) 
+            ],
+            'layout': go.Layout(
+                title = 'Found meteorites distribution since 1800',
+                xaxis={'title': 'Time (year)'},
+                yaxis={'title': 'Quantity of discoveries', 'type' : 'log'}
+            )
+        }
+                   
+    elif right_plot_value == 'seenFallingHist':
+        return {
             'data': [
                 go.Histogram(
                     x=fell_meteorites[fell_meteorites["year"] >= 1800]['year'],
@@ -187,29 +306,8 @@ app.layout = html.Div(className='container-fluid', children=[
                 yaxis={'title': 'Quantity of discoveries', 'type' : 'log'}
             )
         }
-    ),
-    dcc.Graph(
-        id="hist7",
-        figure={
-            'data': [
-                go.Bar(
-                    x=mean_mass_by_main_class.recclass,
-                    y=mean_mass_by_main_class.mass,
-                    marker = {
-                        'color' : palette
-                    }
-                ) 
-            ],
-            'layout': go.Layout(
-                title='Meteorites mean mass according to their class',
-                xaxis={'title': 'Meteorite class'},
-                yaxis={'title': 'Mean mass (in g)', 'rangemode' : 'tozero'}
-            )
-        }
-    ),
-    dcc.Graph(
-        id="hist8",
-        figure={
+    elif right_plot_value == 'massViolin':
+        return {
             'data': [
                 go.Box(
                     x = df[df['fall'] == "Fell"]["fall"],
@@ -234,113 +332,21 @@ app.layout = html.Div(className='container-fluid', children=[
                 yaxis={'title': 'Mass (in g)', 'type' : 'log'}
             )
         }
-    ) 
-])
-
-@app.callback(
-    Output(component_id='mapBox',component_property='children'),
-    [Input(component_id='map-drop', component_property='value')]
-)
-def update_map(map_value):
-    if map_value == 'validMap':
-        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/allImpactsOverTimeMap.html', 'r', encoding='utf8').read())
-    elif map_value == 'heatMap':
-        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/heatmap.html', 'r', encoding='utf8').read())
-    elif map_value == 'clusteredMap':
-        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/clusteredMap.html', 'r', encoding='utf8').read())
-    elif map_value == 'foundSeenFallingMap':
-        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/discoveryTypeMap.html', 'r', encoding='utf8').read())
-    else:
-        return html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/discoveryClassMap.html', 'r', encoding='utf8').read())
-
-@app.callback(
-    Output(component_id='left-plot',component_property='children'),
-    [Input(component_id='left-plot-drop', component_property='value')]
-)
-
-def update_left_plot(left_plot_value):
-    if left_plot_value == 'discoveriesHist':
-        return {
-            dcc.Graph(
-                figure={
-                    'data': [
-                        go.Histogram(
-                            x=df[df["year"] >= 1800]['year'],
-                            xbins=dict(start=np.min(df['year']), size=10, end=2020)
-                        ) 
-                    ],
-                    'layout': go.Layout(
-                        title = 'Meteorite discoveries distribution since 1800',
-                        xaxis={'title': 'Time (year)'},
-                        yaxis={'title': 'Quantity of discoveries', 'type' : 'log'},
-                    )
-                }
-            )
-        }
-    elif left_plot_value == 'massHist':
-        return {
-            dcc.Graph(
-                figure={
-                    'data': [
-                        go.Histogram(
-                            x=df['mass'],
-                            xbins=dict(start=np.min(df['mass']), size=100, end=10000)
-                        ) 
-                    ],
-                    'layout': go.Layout(
-                        title='Meteorite mass distribution',
-                        xaxis={'title': 'Mass (in g)'},
-                        yaxis={'title' : 'Quantity of meteorites', 'type' : 'log'}
-                    )
-                }
-            )
-        }
-    elif left_plot_value == 'meanMassPerFall':
-        return {
-            dcc.Graph(
-                figure={
-                    'data': [
-                        go.Bar(
-                            x=mean_mass_by_fall.fall,
-                            y=mean_mass_by_fall.mass,
-                            marker = {
-                                'color' : palette
-                            }
-                        ) 
-                    ],
-                    'layout': go.Layout(
-                        title='Mean mass in terms of type of discovery',
-                        xaxis={'title': 'Type of discovery'},
-                        yaxis={'title' : 'Mean mass (in g)', 'rangemode' : 'tozero'}
-                    )
-                }
-            )
-        }
-    elif left_plot_value == 'classesHist':
-        return {
-            dcc.Graph(
-                figure={
-                    'data': [
-                        go.Bar(
-                            x=main_class_occurences.index.tolist(),
-                            y=main_class_occurences.recclass,
-                            marker = {
-                                'color' : palette
-                            }
-                        ) 
-                    ],
-                    'layout': go.Layout(
-                        title='Six main meteorites class frequency',
-                        xaxis={'title': 'Class of meteorite'},
-                        yaxis={'title': 'Quantity of meteorites', 'rangemode' : 'tozero'}
-                    )
-                }
-            )
-        }
     else:
         return {
-            dcc.Graph(
-                figure = fig
+            'data': [
+                go.Bar(
+                    x=mean_mass_by_main_class.recclass,
+                    y=mean_mass_by_main_class.mass,
+                    marker = {
+                        'color' : palette
+                    }
+                ) 
+            ],
+            'layout': go.Layout(
+                title='Meteorites mean mass according to their class',
+                xaxis={'title': 'Meteorite class'},
+                yaxis={'title': 'Mean mass (in g)', 'rangemode' : 'tozero'}
             )
         }
 
