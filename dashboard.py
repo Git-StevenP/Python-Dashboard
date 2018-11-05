@@ -104,9 +104,15 @@ palette = ["rgba(255,51,51,1)", "rgba(51,153,255,1)", "rgba(51,255,51,1)", "rgba
 app.layout = html.Div(className='container-fluid', children=[
     html.Div(className='row', children=[
         html.Div(className='col-md-2', style={"height": "100vh", "background" : "#1d283a"}, children=[
-            html.Div(className="collapse show", id="navbarToggleExternalContent", style={'height' : '100vh','width':'80%'}, children=[
+            html.Div(className="collapse show", id="navbarToggleExternalContent", style={'height' : '100vh','width':'100%'}, children=[
                 html.H3('Dashboard', className="text-white", style={'color':'white'}),
                 html.Div([
+                    # html.Div(id="dashboard", className="col-md-12", style={'text-align': 'center', 'height': '30px', 'background' : 'white','border-radius':'10px', 'cursor': 'pointer', 'margin-bottom': '2px'}, children=[
+                    #     html.Div("Dashboard", className="nav-link", style={'text-decoration': 'none', 'height': '50%', 'font-size': '16px', 'padding-top': '5px'}) 
+                    # ]),
+                    # html.Div(id="analysis", className="col-md-12", style={'text-align': 'center', 'height': '30px', 'background' : 'white','border-radius': '10px', 'cursor': 'pointer', 'margin-bottom': '8px'}, children=[
+                    #     html.Div("Analysis", className="nav-link", style={'text-decoration': 'none', 'height': '50%', 'font-size': '16px', 'padding-top': '5px'}) 
+                    # ]),
                     html.P('Maps', style={'color' : 'white', 'font-size' : '16px', 'margin-top' : '20px', 'margin-bottom' : 0}),
                     dcc.Dropdown(
                         id = "map-drop",
@@ -141,7 +147,7 @@ app.layout = html.Div(className='container-fluid', children=[
                 ])
             ])
         ]),
-        html.Div(className='col-md-10', style={"height": "100vh"}, children=[
+        html.Div(id='right-panel', className='col-md-10', style={"height": "100vh"}, children=[
             html.Div(id = "mapBox", className='row', style={"height": "50%", 'width':'80%', 'margin' : 'auto'} , children=[
                 html.Iframe(style={'height':'100%', 'width':'100%'}, srcDoc = open('html-maps/heatmap.html', 'r', encoding='utf8').read()),
             ]),
@@ -186,6 +192,18 @@ app.layout = html.Div(className='container-fluid', children=[
         ])
     ])
 ])
+
+# @app.callback(
+#     Output(component_id='right-panel',component_property='children'),
+#     [Input(component_id='dashboard', component_property='n_clicks'), Input(component_id='analysis', component_property='n_clicks')]
+# )
+
+# def update_right_content(nb_clicks):
+#     nb
+#     if nb_clicks == "dashboard":
+#         return html.Div("salut", className='col-md-12')
+#     elif nb_clicks == "analysis":
+#         return html.Div("NON", className='col-md-12')
 
 @app.callback(
     Output(component_id='mapBox',component_property='children'),
